@@ -5,7 +5,7 @@ trimestre même, avec l'information réellement disponible à chaque date, et me
 l'autorégression, du PIB mensuel, des 400 séries de la LCDMA ou de l'apprentissage machine fait le
 meilleur travail.
 
-[![ci](https://github.com/Guilou001/07-nowcast-canada/actions/workflows/ci.yml/badge.svg)](https://github.com/Guilou001/07-nowcast-canada/actions/workflows/ci.yml)
+[![ci](https://github.com/Guilou001/07-nowcast-pib-canada/actions/workflows/ci.yml/badge.svg)](https://github.com/Guilou001/07-nowcast-pib-canada/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.12-blue)
 ![licence](https://img.shields.io/badge/code-MIT-green)
 
