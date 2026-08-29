@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "Pour citer ce dépôt, utiliser les métadonnées ci-dessous."
+title: "07-nowcast-canada : nowcast du PIB trimestriel canadien en pseudo temps réel"
+authors:
+  - family-names: Vaudescal
+    given-names: Guillaume
+year: 2026
+url: "https://github.com/Guilou001/07-nowcast-canada"
+repository-code: "https://github.com/Guilou001/07-nowcast-canada"
+license: MIT
