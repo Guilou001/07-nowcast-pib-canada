@@ -4,7 +4,7 @@ UV ?= uv
 setup:
 	$(UV) sync --locked --all-extras
 
-test:             ## 6 tests synthétiques : calendrier, AR, bridge, fuite, Diebold-Mariano (sans réseau)
+test:             ## 8 tests synthétiques : calendrier, AR, bridge, fuite, caches, Diebold-Mariano (sans réseau)
 	$(UV) run pytest
 
 lint:

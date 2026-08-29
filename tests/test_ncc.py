@@ -66,7 +66,34 @@ def test_features_ignore_panel_months_after_the_cutoff():
     shocked = panel.copy()
     shocked.loc[shocked.index > info.panel_through] = 99.0     # le futur du panel bouge
     _, _, x_now_shocked = feature_table(y, shocked, level, info, start)
-    assert np.allclose(np.abs(x_now[:10]), np.abs(x_now_shocked[:10]), atol=1e-8)
+    # même ACP (mêmes données avant la coupure), donc mêmes scores, signes compris
+    assert np.allclose(x_now, x_now_shocked, atol=1e-8)
+
+
+def test_factor_cache_requires_the_same_object():
+    from ncc.models import _FACTOR_CACHE, factor_history
+
+    _, _, panel = synthetic_world()
+    cutoff = pd.Period("2018-04", freq="M")
+    a = factor_history(panel, cutoff)
+    n_before = len(_FACTOR_CACHE)
+    b = factor_history(panel.copy(), cutoff)       # copie : même contenu, autre objet
+    assert np.allclose(a.to_numpy(), b.to_numpy())
+    assert len(_FACTOR_CACHE) > n_before           # la copie a été recalculée, pas servie du cache
+
+
+def test_discontinued_series_are_dropped_at_the_cutoff():
+    from ncc.models import factor_history
+
+    _, _, panel = synthetic_world()
+    dead = panel.copy()
+    dead["morte"] = dead.iloc[:, 0]
+    cutoff = pd.Period("2018-04", freq="M")
+    dead.loc[dead.index > pd.Period("2015-12", freq="M"), "morte"] = np.nan   # série arrêtée en 2015
+    alive_scores = factor_history(panel, cutoff)
+    dead_scores = factor_history(dead, cutoff)
+    # la série morte est écartée : les scores coïncident avec le panel qui ne l'a jamais contenue
+    assert np.allclose(alive_scores.to_numpy(), dead_scores.to_numpy())
 
 
 def test_dm_pvalue_orders_a_clear_winner():

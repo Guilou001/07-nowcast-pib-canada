@@ -83,8 +83,9 @@ def bridge_quarterly_growth(mgdp_level: pd.Series, info: InfoSet) -> float:
     (série, trimestre, date d'arrêt).
     """
     key = (id(mgdp_level), info.quarter, info.panel_through)
-    if key in _BRIDGE_CACHE:
-        return _BRIDGE_CACHE[key]
+    hit = _BRIDGE_CACHE.get(key)
+    if hit is not None and hit[0] is mgdp_level:
+        return hit[1]
     level = mgdp_level[mgdp_level.index <= info.panel_through].dropna()
     growth = 100.0 * level.pct_change().dropna()
     g = growth.to_numpy()
@@ -102,8 +103,9 @@ def bridge_quarterly_growth(mgdp_level: pd.Series, info: InfoSet) -> float:
     series = pd.Series(levels)
     q_level = series.groupby(series.index.asfreq("Q")).mean()
     ratio = q_level[info.quarter] / q_level[info.quarter - 1]
-    _BRIDGE_CACHE[key] = float(100.0 * (ratio**4 - 1.0))
-    return _BRIDGE_CACHE[key]
+    value = float(100.0 * (ratio**4 - 1.0))
+    _BRIDGE_CACHE[key] = (mgdp_level, value)
+    return value
 
 
 def bridge_nowcast(y: pd.Series, mgdp_level: pd.Series, info: InfoSet) -> float:
@@ -117,56 +119,73 @@ def bridge_nowcast(y: pd.Series, mgdp_level: pd.Series, info: InfoSet) -> float:
     return _predict(beta, np.array([bridge_quarterly_growth(mgdp_level, info)]))
 
 
-_FACTOR_CACHE: dict[tuple[int, pd.Period, int], np.ndarray] = {}
-_BRIDGE_CACHE: dict[tuple[int, pd.Period, pd.Period], float] = {}
+# Caches à référence FORTE : la clé retient l'objet lui-même (pas seulement son id), et un
+# succès de cache exige l'identité `is` ; un id() réutilisé après libération ne peut donc jamais
+# servir une valeur périmée. Hypothèse restante, déclarée : les panels ne sont pas mutés en place.
+_FACTOR_CACHE: dict[tuple[int, pd.Period, int], tuple[pd.DataFrame, pd.DataFrame]] = {}
+_BRIDGE_CACHE: dict[tuple[int, pd.Period, pd.Period], tuple[pd.Series, float]] = {}
 
 
-def factor_state(panel_stat: pd.DataFrame, info: InfoSet, n_factors: int = N_FACTORS) -> np.ndarray:
-    """Les composantes principales du panel arrêté à `panel_through`, moyennées sur les trois
-    derniers mois disponibles : l'état de l'économie tel que le panel le voit à cette date.
+def factor_history(panel_stat: pd.DataFrame, cutoff: pd.Period,
+                   n_factors: int = N_FACTORS) -> pd.DataFrame:
+    """UNE seule ACP par origine (Stock et Watson, 2002) : ajustée sur le panel arrêté à `cutoff`,
+    elle produit l'historique mensuel complet des scores de facteurs vus de cette origine.
 
-    Mémoïsé par (panel, date d'arrêt, nombre de facteurs) : l'état ne dépend que de la date
-    d'arrêt, pas du trimestre visé, et le backtest revisite les mêmes dates des dizaines de fois.
+    Les lignes historiques de la table de traits lisent toutes CE fit : le signe et l'ordre des
+    composantes, arbitraires d'un ajustement à l'autre, sont ainsi cohérents sur toute la colonne.
+    Seules les séries encore observées à la coupure sont gardées (une série discontinuée serait
+    sinon épinglée à sa moyenne) ; les trous restants sont mis à zéro après standardisation,
+    c'est-à-dire imputés à la moyenne, choix déclaré.
     """
-    key = (id(panel_stat), info.panel_through, n_factors)
-    if key in _FACTOR_CACHE:
-        return _FACTOR_CACHE[key]
+    key = (id(panel_stat), cutoff, n_factors)
+    hit = _FACTOR_CACHE.get(key)
+    if hit is not None and hit[0] is panel_stat:
+        return hit[1]
     from sklearn.decomposition import PCA
 
-    avail = panel_stat[panel_stat.index <= info.panel_through]
-    avail = avail.loc[pd.Period("1982-01", freq="M"):]
-    keep = avail.columns[avail.notna().mean() > 0.90]
+    avail = panel_stat[panel_stat.index <= cutoff].loc[pd.Period("1982-01", freq="M"):]
+    alive = avail.columns[avail.iloc[-3:].notna().any()]
+    keep = [c for c in alive if avail[c].notna().mean() > 0.90]
     x = avail[keep]
-    z = (x - x.mean()) / x.std(ddof=1)
-    z = z.fillna(0.0)
+    z = ((x - x.mean()) / x.std(ddof=1)).fillna(0.0)
     pca = PCA(n_components=n_factors, random_state=0)
-    factors = pca.fit_transform(z.to_numpy())
-    _FACTOR_CACHE[key] = factors[-3:].mean(axis=0)
-    return _FACTOR_CACHE[key]
+    scores = pd.DataFrame(pca.fit_transform(z.to_numpy()), index=avail.index)
+    _FACTOR_CACHE[key] = (panel_stat, scores)
+    return scores
+
+
+def _state(scores: pd.DataFrame, through: pd.Period) -> np.ndarray:
+    """La moyenne des scores sur les trois mois se terminant à `through` (NaN si trop tôt)."""
+    window = scores[scores.index <= through].iloc[-3:]
+    if len(window) < 3:
+        return np.full(scores.shape[1], np.nan)
+    return window.mean(axis=0).to_numpy()
 
 
 def feature_table(y: pd.Series, panel_stat: pd.DataFrame, mgdp_level: pd.Series, info: InfoSet,
                   start: pd.Period, n_factors: int = N_FACTORS,
                   us_panel: pd.DataFrame | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """La même table de traits pour facteurs, elastic net et forêt : une ligne par trimestre
-    publié s, construite avec l'ensemble d'information que s aurait eu au même mois du trimestre
-    (facteurs du panel, agrégat bridge, dernier PIB connu à l'époque)."""
+    publié s, avec l'état des facteurs lu au mois que s aurait eu (dans l'ACP unique de l'origine),
+    l'agrégat bridge et le dernier PIB connu à l'époque de s."""
+    scores = factor_history(panel_stat, info.panel_through, n_factors)
+    scores_us = factor_history(us_panel, info.panel_through, 5) if us_panel is not None else None
     hist = y[(y.index <= info.gdp_through) & (y.index >= start)].dropna()
     rows, targets = [], []
     for s in hist.index:
         past = InfoSet(s, info.month_idx)
-        feats = [*factor_state(panel_stat, past, n_factors),
+        feats = [*_state(scores, past.panel_through),
                  bridge_quarterly_growth(mgdp_level, past),
                  float(y[past.gdp_through]) if past.gdp_through in y.index else np.nan]
-        if us_panel is not None:
-            feats.extend(factor_state(us_panel, past, 5))
+        if scores_us is not None:
+            feats.extend(_state(scores_us, past.panel_through))
         rows.append(feats)
         targets.append(hist[s])
-    feats_now = [*factor_state(panel_stat, info, n_factors),
+    feats_now = [*_state(scores, info.panel_through),
                  bridge_quarterly_growth(mgdp_level, info),
                  float(y[info.gdp_through])]
-    if us_panel is not None:
-        feats_now.extend(factor_state(us_panel, info, 5))
+    if scores_us is not None:
+        feats_now.extend(_state(scores_us, info.panel_through))
     x = np.array(rows)
     keep = ~np.isnan(x).any(axis=1)
     return x[keep], np.array(targets)[keep], np.array(feats_now)

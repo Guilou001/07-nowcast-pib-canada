@@ -53,8 +53,7 @@ def backtest(start: str = "2011Q1", end: str = "2023Q4", out: Path = Path("resul
     figs.mkdir(parents=True, exist_ok=True)
     figures.fig_nowcast_vs_realise(results, figs / "nowcast_vs_realise.png")
     figures.fig_rmsfe(engine.summary(results, exclude_covid=True), figs / "rmsfe_par_mois.png")
-    figures.fig_us_block(engine.summary(results), engine.summary(results, exclude_covid=True),
-                         figs / "bloc_americain.png")
+    figures.fig_us_block(engine.summary(results, exclude_covid=True), figs / "bloc_americain.png")
     typer.echo(f"{len(results)} nowcasts, tables -> {tables}, figures -> {figs}, "
                f"durée {time.time() - t0:.0f} s")
 

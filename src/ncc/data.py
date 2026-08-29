@@ -8,7 +8,7 @@ Trois sources, trois statuts :
 2. **PIB mensuel réel par industrie** : table 36-10-0434, vecteur v65201210, toutes industries.
    Même API ; c'est la matière première du modèle bridge.
 3. **LCDMA** (Fortin-Gagnon, Leroux, Stevanovic et Surprenant, 2022), le grand panel mensuel canadien,
-   411 séries depuis 1981 : licence non commerciale, donc JAMAIS commité ; le fichier CAN_MD se dépose
+   410 séries depuis 1981 : licence non commerciale, donc JAMAIS commité ; le fichier CAN_MD se dépose
    à la main dans data/raw/ (instructions dans le README). Les millésimes publics (Borealis,
    DOI 10.5683/SP3/59JYPU) s'arrêtent en 2021-08 ; le snapshot utilisé ici court jusqu'en 2024-04,
    date déclarée dans le nom du fichier.

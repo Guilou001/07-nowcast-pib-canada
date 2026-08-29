@@ -69,13 +69,13 @@ def fig_rmsfe(summary_nc: pd.DataFrame, dest: Path) -> None:
     ax.set_xticks(x, [LABELS[m] for m in models], fontsize=9)
     ax.set_ylabel("RMSFE / RMSFE de l'AR")
     ax.yaxis.set_major_formatter(fr)
-    ax.set_title("Plus le trimestre avance, plus les données mensuelles paient (hors COVID)")
+    ax.set_title("Le pont du PIB mensuel paie de plus en plus ; le grand panel, non (hors COVID)")
     ax.legend(fontsize=9)
     fig.savefig(dest)
     plt.close(fig)
 
 
-def fig_us_block(summary_all: pd.DataFrame, summary_nc: pd.DataFrame, dest: Path) -> None:
+def fig_us_block(summary_nc: pd.DataFrame, dest: Path) -> None:
     """L'apport du bloc américain : facteurs seuls contre facteurs plus FRED-MD, par mois."""
     fr = use_style()
     fig, ax = plt.subplots(figsize=(8, 4))
