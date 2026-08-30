@@ -1,3 +1,6 @@
+[tool.uv.sources]
+gvf = { git = "https://github.com/Guilou001/gv-fintools", tag = "v0.2.1" }
+
 [build-system]
 requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
@@ -11,6 +14,7 @@ license = { file = "LICENSE" }
 authors = [{ name = "Guillaume Vaudescal" }]
 requires-python = ">=3.12,<3.13"
 dependencies = [
+  "gvf[figures]>=0.2.1",
   "numpy>=1.26",
   "pandas>=2.2",
   "scipy>=1.13",
