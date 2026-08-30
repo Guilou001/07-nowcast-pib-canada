@@ -39,6 +39,8 @@
 
 Le PIB trimestriel canadien arrive avec deux mois de retard ; ce dépôt le prévoit pendant le trimestre même, avec l'information réellement disponible à chaque date, et mesure qui de l'autorégression, du PIB mensuel, des 400 séries de la LCDMA ou de l'apprentissage machine fait le meilleur travail.
 
+Le même contenu en PDF : #link("rapport/rapport.pdf")[rapport/rapport.pdf].
+
 *Résultat en une phrase.* Sur 52 trimestres hors échantillon (2011-2023), le modèle bridge, la simple agrégation du PIB mensuel par industrie, *réduit l'erreur de prévision de 57 % par rapport à l'autorégression au troisième mois du trimestre* (ratio de RMSFE 0,43, p de Diebold-Mariano 0,027, hors COVID) ; le modèle sur les 400 séries de la LCDMA fait PIRE que l'autorégression au même mois (ratio 1,09), et le bloc américain de FRED-MD dégrade fortement le premier mois (1,71 contre 1,22).
 
 _English summary._ Pseudo real-time nowcasting of Canadian quarterly GDP growth, 2011-2023, with publication lags enforced at every date: an AR benchmark, a monthly-GDP bridge, principal-component factors from the LCDMA panel (one PCA per forecast origin, Stock-Watson style), elastic net and random forest, plus a US-block test with FRED-MD factors. Measured verdict: the humble bridge cuts RMSFE by 57 % versus the AR by month 3 (ratio 0.43, DM p = 0.027, ex-COVID); the 400-series factor model does WORSE than the AR at that same month (ratio 1.09), and the US block sharply hurts month 1 (1.71 vs 1.22). A #raw("ncc report") command produces the current-quarter nowcast from fresh Statistics Canada data.

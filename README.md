@@ -9,6 +9,8 @@ meilleur travail.
 ![python](https://img.shields.io/badge/python-3.12-blue)
 ![licence](https://img.shields.io/badge/code-MIT-green)
 
+Le même contenu en PDF : [rapport/rapport.pdf](rapport/rapport.pdf).
+
 **Résultat en une phrase.** Sur 52 trimestres hors échantillon (2011-2023), le modèle bridge, la
 simple agrégation du PIB mensuel par industrie, **réduit l'erreur de prévision de 57 % par rapport à
 l'autorégression au troisième mois du trimestre** (ratio de RMSFE 0,43, p de Diebold-Mariano 0,027,
