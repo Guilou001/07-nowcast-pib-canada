@@ -1,4 +1,4 @@
-#set document(title: "Nowcaster le PIB canadien : le pont mensuel bat l'autorégression, le bloc américain n'ajoute rien", author: "Guillaume Vaudescal")
+#set document(title: "Prévoir le PIB canadien avant sa publication", author: "Guillaume Vaudescal")
 #set page(
   paper: "a4",
   margin: (x: 2.2cm, y: 2.4cm),
@@ -30,24 +30,30 @@
 
 #align(center)[
   #block(width: 100%)[
-    #text(size: 18pt, weight: "bold")[Nowcaster le PIB canadien : le pont mensuel bat l'autorégression, le bloc américain n'ajoute rien]
+    #text(size: 18pt, weight: "bold")[Prévoir le PIB canadien avant sa publication]
     #v(0.6em)
-    #text(size: 10pt, fill: luma(70))[Guillaume Vaudescal · 2026-08-30 · #link("https://github.com/Guilou001/07-nowcast-pib-canada")[Guilou001/07-nowcast-pib-canada]]
+    #text(size: 10pt, fill: luma(70))[Guillaume Vaudescal · 2026-09-04 · #link("https://github.com/Guilou001/07-nowcast-pib-canada")[Guilou001/07-nowcast-pib-canada]]
   ]
 ]
 #v(1.2em)
 #line(length: 100%, stroke: 0.6pt + luma(190))
 #v(0.8em)
 
-Le PIB trimestriel canadien arrive avec deux mois de retard ; ce dépôt le prévoit pendant le trimestre même, avec l'information réellement disponible à chaque date, et mesure qui de l'autorégression, du PIB mensuel, des 400 séries de la LCDMA ou de l'apprentissage machine fait le meilleur travail.
+Le produit intérieur brut trimestriel décrit l'évolution de l'économie canadienne, mais il est publié avec retard. Lorsqu'un trimestre se termine, les décideurs doivent donc agir avant de connaître sa croissance officielle. Le présent projet cherche à produire une estimation pendant le trimestre en utilisant seulement l'information disponible à chaque date.
+
+Nous comparons une prévision fondée sur le passé du PIB à des modèles qui ajoutent le PIB mensuel, environ 400 séries canadiennes et un ensemble de données américaines. Cette comparaison est menée comme elle l'aurait été en temps réel : une série publiée trop tard n'entre pas dans la prévision.
+
+*Résultat principal.* Sur 52 trimestres de 2011 à 2023, le modèle qui agrège le PIB mensuel réduit l'erreur de 57 % au troisième mois du trimestre, comparativement au modèle autorégressif. L'écart reste statistiquement mesurable lorsque la période de la pandémie est retirée, avec une probabilité critique de 0,027. En revanche, le modèle alimenté par les 400 séries canadiennes fait légèrement pire que la référence, et l'ajout du bloc américain dégrade fortement la prévision du premier mois.
+
+Afin de comprendre ce résultat, nous présenterons d'abord le calendrier de publication des données. Dans un deuxième temps, nous expliquerons les modèles et la manière dont chaque prévision respecte ce calendrier. Ensuite, nous comparerons leurs erreurs selon le mois du trimestre et la période étudiée. Enfin, nous montrerons comment produire l'estimation courante, puis nous présenterons les limites et les commandes de reproduction.
 
 Le même contenu en PDF : #link("rapport/rapport.pdf")[rapport/rapport.pdf].
 
-*Résultat en une phrase.* Sur 52 trimestres hors échantillon (2011-2023), le modèle bridge, la simple agrégation du PIB mensuel par industrie, *réduit l'erreur de prévision de 57 % par rapport à l'autorégression au troisième mois du trimestre* (ratio de RMSFE 0,43, p de Diebold-Mariano 0,027, hors COVID) ; le modèle sur les 400 séries de la LCDMA fait PIRE que l'autorégression au même mois (ratio 1,09), et le bloc américain de FRED-MD dégrade fortement le premier mois (1,71 contre 1,22).
+== Résumé en anglais
 
 _English summary._ Pseudo real-time nowcasting of Canadian quarterly GDP growth, 2011-2023, with publication lags enforced at every date: an AR benchmark, a monthly-GDP bridge, principal-component factors from the LCDMA panel (one PCA per forecast origin, Stock-Watson style), elastic net and random forest, plus a US-block test with FRED-MD factors. Measured verdict: the humble bridge cuts RMSFE by 57 % versus the AR by month 3 (ratio 0.43, DM p = 0.027, ex-COVID); the 400-series factor model does WORSE than the AR at that same month (ratio 1.09), and the US block sharply hurts month 1 (1.71 vs 1.22). A #raw("ncc report") command produces the current-quarter nowcast from fresh Statistics Canada data.
 
-== 1. La question posée
+== 1. La question en détail
 
 Un nowcast, une prévision du trimestre EN COURS faite avant sa publication officielle, est le pain quotidien des banques centrales : la Banque du Canada décide en octobre avec un PIB officiel arrêté en juin. En mots simples : peut-on deviner la croissance du trimestre où l'on se trouve, en n'utilisant que ce qui est déjà publié, et qu'est-ce qui aide le plus, le passé du PIB lui-même, le PIB mensuel par industrie, un grand panel de 400 indicateurs, ou des modèles d'apprentissage machine ? Et la question de Chernis et Sekkel (2017), reposée dix ans plus tard : les données américaines améliorent-elles le nowcast canadien ?
 
