@@ -1,0 +1,3 @@
+# Keep generated reports and figures as binary files.
+*.pdf binary
+*.png binary
